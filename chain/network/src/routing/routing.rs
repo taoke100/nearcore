@@ -10,6 +10,7 @@ use actix::{Actor, Message};
 use borsh::{BorshDeserialize, BorshSerialize};
 use cached::{Cached, SizedCache};
 use conqueue::{QueueReceiver, QueueSender};
+use near_crypto::{KeyType, SecretKey, Signature};
 use near_network_primitives::types::{PeerIdOrHash, Ping, Pong};
 #[cfg(feature = "test_features")]
 use serde::Serialize;

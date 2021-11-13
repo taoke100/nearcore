@@ -10,7 +10,6 @@ use tracing::{debug, trace, warn};
 
 #[cfg(feature = "protocol_feature_routing_exchange_algorithm")]
 use crate::routing::edge::SimpleEdge;
-#[cfg(feature = "delay_detector")]
 use delay_detector::DelayDetector;
 use near_performance_metrics_macros::perf;
 use near_primitives::borsh::BorshSerialize;

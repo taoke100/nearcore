@@ -2412,6 +2412,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "near-cache"
+version = "0.1.0"
+dependencies = [
+ "cached",
+]
+
+[[package]]
 name = "near-chain"
 version = "0.1.0"
 dependencies = [

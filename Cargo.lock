@@ -1697,7 +1697,7 @@ dependencies = [
  "lazy-static-include",
  "near-chain-configs",
  "near-crypto",
- "near-network",
+ "near-network-primitives",
  "near-primitives",
  "nearcore",
  "node-runtime",

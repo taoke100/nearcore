@@ -271,7 +271,7 @@ impl PeerManagerActor {
             .send(RoutingTableMessages::RoutingTableUpdate { prune, prune_edges_not_reachable_for })
             .into_actor(self)
             .map(|response, act, _| match response {
-                Ok(RoutingTableMessagesResponse::RoutingTableUpdateResponse {
+                Ok(crate::RoutingTableMessagesResponse::RoutingTableUpdateResponse {
                     edges_to_remove,
                     peer_forwarding,
                 }) => {

@@ -6,7 +6,6 @@ pub struct MyCache<K, V> {
     inner: Mutex<SizedCache<K, V>>,
 }
 
-// MyCache<CryptoHash, Result<wasmer_runtime::Module, CompilationError>>
 impl<K, V> MyCache<K, V>
 where
     K: Hash + Eq + PartialEq + Clone,

@@ -87,12 +87,12 @@ mod clock {
     }
 
     impl Clock {
-        pub fn set_mock() {
+        fn set_mock() {
             MockClockPerThread::with(|clock| {
                 clock.is_mock = true;
             });
         }
-        pub fn reset() {
+        fn reset() {
             MockClockPerThread::with(|clock| {
                 clock.reset();
             });
@@ -150,7 +150,7 @@ mod clock {
         }
 
         pub fn now() -> Time {
-            Time::from_utc(Clock::utc())
+            Clock::utc().into()
         }
 
         pub fn instant_call_count() -> u64 {
@@ -188,12 +188,12 @@ mod time {
 
     #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
     pub struct Time {
-        time: SystemTime,
+        system_time: SystemTime,
     }
 
     impl BorshSerialize for Time {
         fn serialize<W: std::io::Write>(&self, writer: &mut W) -> Result<(), std::io::Error> {
-            let nanos = self.duration_since(&Time::UNIX_EPOCH).as_nanos() as u64;
+            let nanos = self.to_unix_timestampt_nanos();
             BorshSerialize::serialize(&nanos, writer).unwrap();
             Ok(())
         }
@@ -203,45 +203,49 @@ mod time {
         fn deserialize(buf: &mut &[u8]) -> Result<Self, std::io::Error> {
             let nanos: u64 = borsh::BorshDeserialize::deserialize(buf)?;
 
-            Ok(Time::UNIX_EPOCH + Duration::from_nanos(nanos))
+            Ok(Time::from_unix_timestamp_nanos(nanos))
+        }
+    }
+
+    impl From<SystemTime> for Time {
+        fn from(system_time: SystemTime) -> Self {
+            Self { system_time }
+        }
+    }
+
+    impl From<DateTime<Utc>> for Time {
+        fn from(utc: DateTime<Utc>) -> Self {
+            let nanos = utc.timestamp_nanos() as u64;
+
+            Self::UNIX_EPOCH + Duration::from_nanos(nanos)
         }
     }
 
     impl Time {
-        pub const UNIX_EPOCH: Time = Time::from_system_time(SystemTime::UNIX_EPOCH);
+        pub const UNIX_EPOCH: Time = Time { system_time: SystemTime::UNIX_EPOCH };
 
-        pub const fn from_system_time(system_time: SystemTime) -> Time {
-            Time { time: system_time }
+        pub fn now() -> Self {
+            Self::UNIX_EPOCH + Duration::from_nanos(Clock::utc().timestamp_nanos() as u64)
         }
 
-        pub fn from_utc(utc: DateTime<Utc>) -> Time {
-            let nanos = utc.timestamp_nanos() as u64;
-
-            Time::UNIX_EPOCH + Duration::from_nanos(nanos)
-        }
-
-        pub fn now() -> Time {
-            Time::UNIX_EPOCH + Duration::from_nanos(Clock::utc().timestamp_nanos() as u64)
-        }
-
-        pub fn duration_since(&self, rhs: &Time) -> Duration {
-            self.time.duration_since(rhs.time).unwrap_or(Duration::from_millis(0))
+        pub fn duration_since(&self, rhs: &Self) -> Duration {
+            self.system_time.duration_since(rhs.system_time).unwrap_or(Duration::from_millis(0))
         }
 
         pub fn elapsed(&self) -> Duration {
-            Time::now().duration_since(self)
+            Self::now().duration_since(self)
         }
 
-        pub fn from_timestamp(timestamp: u64) -> Self {
-            Time::UNIX_EPOCH + Duration::from_nanos(timestamp)
+        pub fn from_unix_timestamp_nanos(timestamp: u64) -> Self {
+            Self::UNIX_EPOCH + Duration::from_nanos(timestamp)
         }
 
-        pub fn to_timestamp(&self) -> u64 {
-            self.duration_since(&Time::UNIX_EPOCH).as_nanos() as u64
+        pub fn to_unix_timestampt_nanos(&self) -> u64 {
+            self.duration_since(&Self::UNIX_EPOCH).as_nanos() as u64
         }
 
         pub fn inner(self) -> SystemTime {
-            self.time
+            self.system_time
         }
     }
 
@@ -249,7 +253,7 @@ mod time {
         type Output = Self;
 
         fn add(self, other: Duration) -> Self {
-            Self { time: self.time + other }
+            Self { system_time: self.system_time + other }
         }
     }
 
@@ -257,7 +261,7 @@ mod time {
         type Output = Duration;
 
         fn sub(self, other: Self) -> Self::Output {
-            self.time.duration_since(other.time).unwrap_or(Duration::from_millis(0))
+            self.system_time.duration_since(other.system_time).unwrap_or(Duration::from_millis(0))
         }
     }
 
@@ -270,7 +274,7 @@ mod time {
         fn test_operator() {
             let now_st = SystemTime::now();
 
-            let now_nc = Time::from_system_time(now_st);
+            let now_nc: Time = now_st.into();
 
             let t_nc = now_nc + Duration::from_nanos(123456);
             let t_st = now_st + Duration::from_nanos(123456);

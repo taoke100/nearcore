@@ -143,7 +143,6 @@ pub struct NightshadeRuntime {
     shard_tracker: ShardTracker,
     genesis_state_roots: Vec<StateRoot>,
     migration_data: Arc<MigrationData>,
-
     num_epochs_to_keep_store_data: u64,
 }
 

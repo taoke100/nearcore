@@ -2962,12 +2962,12 @@ mod tests {
     use near_primitives::validator_signer::InMemoryValidatorSigner;
     use near_store::test_utils::create_test_store;
     use near_store::DBCol;
+    #[cfg(feature = "expensive_tests")]
+    use {crate::store_validator::StoreValidator, near_chain_configs::GenesisConfig};
 
     use crate::store::{ChainStoreAccess, GCMode};
     use crate::test_utils::KeyValueRuntime;
     use crate::{Chain, ChainGenesis, DoomslugThresholdMode};
-    #[cfg(feature = "expensive_tests")]
-    use {crate::store_validator::StoreValidator, near_chain_configs::GenesisConfig};
 
     fn get_chain() -> Chain {
         get_chain_with_epoch_length(10)

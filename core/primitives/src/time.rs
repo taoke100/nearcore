@@ -1,5 +1,7 @@
+// TODO#(5174) don't export external types from your own crate
 pub use chrono::Utc;
 pub use clock::{Clock, MockClockGuard};
+// TODO#(5174) don't export external types from your own crate
 pub use std::time::{Duration, Instant};
 pub use time::Time;
 pub use time::TIME_UNIX_EPOCH;

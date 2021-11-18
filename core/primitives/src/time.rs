@@ -4,7 +4,6 @@ pub use clock::{Clock, MockClockGuard};
 // TODO#(5174) don't export external types from your own crate
 pub use std::time::{Duration, Instant};
 pub use time::Time;
-pub use time::TIME_UNIX_EPOCH;
 
 mod clock {
     use crate::time::{Duration, Instant, Time, Utc};
@@ -187,8 +186,6 @@ mod time {
     use std::ops::{Add, Sub};
     use std::time::SystemTime;
 
-    pub const TIME_UNIX_EPOCH: Time = Time::from_system_time(SystemTime::UNIX_EPOCH);
-
     #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
     pub struct Time {
         time: SystemTime,
@@ -196,7 +193,7 @@ mod time {
 
     impl BorshSerialize for Time {
         fn serialize<W: std::io::Write>(&self, writer: &mut W) -> Result<(), std::io::Error> {
-            let nanos = self.duration_since(&TIME_UNIX_EPOCH).as_nanos() as u64;
+            let nanos = self.duration_since(&Time::UNIX_EPOCH).as_nanos() as u64;
             BorshSerialize::serialize(&nanos, writer).unwrap();
             Ok(())
         }
@@ -206,11 +203,13 @@ mod time {
         fn deserialize(buf: &mut &[u8]) -> Result<Self, std::io::Error> {
             let nanos: u64 = borsh::BorshDeserialize::deserialize(buf)?;
 
-            Ok(TIME_UNIX_EPOCH + Duration::from_nanos(nanos))
+            Ok(Time::UNIX_EPOCH + Duration::from_nanos(nanos))
         }
     }
 
     impl Time {
+        pub const UNIX_EPOCH: Time = Time::from_system_time(SystemTime::UNIX_EPOCH);
+
         pub const fn from_system_time(system_time: SystemTime) -> Time {
             Time { time: system_time }
         }
@@ -218,11 +217,11 @@ mod time {
         pub fn from_utc(utc: DateTime<Utc>) -> Time {
             let nanos = utc.timestamp_nanos() as u64;
 
-            TIME_UNIX_EPOCH + Duration::from_nanos(nanos)
+            Time::UNIX_EPOCH + Duration::from_nanos(nanos)
         }
 
         pub fn now() -> Time {
-            TIME_UNIX_EPOCH + Duration::from_nanos(Clock::utc().timestamp_nanos() as u64)
+            Time::UNIX_EPOCH + Duration::from_nanos(Clock::utc().timestamp_nanos() as u64)
         }
 
         pub fn duration_since(&self, rhs: &Time) -> Duration {
@@ -234,11 +233,11 @@ mod time {
         }
 
         pub fn from_timestamp(timestamp: u64) -> Self {
-            TIME_UNIX_EPOCH + Duration::from_nanos(timestamp)
+            Time::UNIX_EPOCH + Duration::from_nanos(timestamp)
         }
 
         pub fn to_timestamp(&self) -> u64 {
-            self.duration_since(&TIME_UNIX_EPOCH).as_nanos() as u64
+            self.duration_since(&Time::UNIX_EPOCH).as_nanos() as u64
         }
 
         pub fn inner(self) -> SystemTime {

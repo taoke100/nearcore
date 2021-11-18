@@ -242,6 +242,7 @@ mod time {
         }
 
         pub fn to_unix_timestamp_nanos(&self) -> Duration {
+            // doesn't truncate, because self::UNIX_EPOCH is 0
             self.duration_since(&Self::UNIX_EPOCH)
         }
 

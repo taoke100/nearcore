@@ -8,6 +8,7 @@ use borsh::ser::BorshSerialize;
 use borsh::BorshDeserialize;
 use tracing::{debug, error, info, warn};
 
+use near_chain::chain::DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA;
 use near_chain::types::{
     ApplySplitStateResult, ApplyTransactionResult, BlockHeaderInfo, ValidatorInfoIdentifier,
 };
@@ -61,7 +62,6 @@ use crate::shard_tracker::{ShardTracker, TrackedConfig};
 use crate::migrations::load_migration_data;
 use crate::NearConfig;
 use errors::FromStateViewerErrors;
-use near_chain::chain::DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA;
 use near_primitives::runtime::config_store::{RuntimeConfigStore, INITIAL_TESTNET_CONFIG};
 use near_primitives::runtime::migration_data::{MigrationData, MigrationFlags};
 use near_primitives::shard_layout::{

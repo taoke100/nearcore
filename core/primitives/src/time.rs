@@ -193,7 +193,7 @@ mod time {
 
     impl BorshSerialize for Time {
         fn serialize<W: std::io::Write>(&self, writer: &mut W) -> Result<(), std::io::Error> {
-            let nanos = self.to_unix_timestampt_nanos();
+            let nanos = self.to_unix_timestamp_nanos().as_nanos() as u64;
             BorshSerialize::serialize(&nanos, writer).unwrap();
             Ok(())
         }
@@ -203,7 +203,7 @@ mod time {
         fn deserialize(buf: &mut &[u8]) -> Result<Self, std::io::Error> {
             let nanos: u64 = borsh::BorshDeserialize::deserialize(buf)?;
 
-            Ok(Time::from_unix_timestamp_nanos(nanos))
+            Ok(Time::from_unix_timestamp(Duration::from_nanos(nanos)))
         }
     }
 
@@ -215,6 +215,7 @@ mod time {
 
     impl From<DateTime<Utc>> for Time {
         fn from(utc: DateTime<Utc>) -> Self {
+            // utc.timestamp_nanos() returns i64
             let nanos = utc.timestamp_nanos() as u64;
 
             Self::UNIX_EPOCH + Duration::from_nanos(nanos)
@@ -236,12 +237,12 @@ mod time {
             Self::now().duration_since(self)
         }
 
-        pub fn from_unix_timestamp_nanos(timestamp: u64) -> Self {
-            Self::UNIX_EPOCH + Duration::from_nanos(timestamp)
+        pub fn from_unix_timestamp(duration: Duration) -> Self {
+            Self::UNIX_EPOCH + duration
         }
 
-        pub fn to_unix_timestampt_nanos(&self) -> u64 {
-            self.duration_since(&Self::UNIX_EPOCH).as_nanos() as u64
+        pub fn to_unix_timestamp_nanos(&self) -> Duration {
+            self.duration_since(&Self::UNIX_EPOCH)
         }
 
         pub fn inner(self) -> SystemTime {

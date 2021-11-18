@@ -10,19 +10,20 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 
 #[derive(Default)]
+// stores mocking state
 struct MockClockPerThread {
+    // list of mocks, they will be returned each time call to get current time is made
     utc: VecDeque<DateTime<Utc>>,
+    // number of times `utc()` method was called since we started mocking
     utc_call_count: u64,
+    // false for default behaviour
+    // true when we want to enable mocking logic
     is_mocked: bool,
 }
 
 pub struct Clock {}
 
 impl MockClockPerThread {
-    pub fn reset(&mut self) {
-        *self = Self::default();
-    }
-
     fn with<F, T>(f: F) -> T
     where
         F: FnOnce(&mut MockClockPerThread) -> T,
@@ -31,11 +32,6 @@ impl MockClockPerThread {
             static INSTANCE: RefCell<MockClockPerThread> = RefCell::default()
         }
         INSTANCE.with(|it| f(&mut *it.borrow_mut()))
-    }
-
-    fn pop_utc(&mut self) -> Option<DateTime<chrono::Utc>> {
-        self.utc_call_count += 1;
-        self.utc.pop_front()
     }
 }
 
@@ -55,18 +51,19 @@ impl Drop for MockClockGuard {
 }
 
 impl Clock {
+    // turns on mocking logic
     fn set_mock() {
         MockClockPerThread::with(|clock| {
             clock.is_mocked = true;
         });
     }
 
+    // removes mock
     fn reset() {
-        MockClockPerThread::with(|clock| {
-            clock.reset();
-        });
+        MockClockPerThread::with(|clock| *clock = MockClockPerThread::default());
     }
 
+    // adds timestamp to queue, it will be returned in `Self::utc()`
     pub fn add_utc(mock_date: DateTime<chrono::Utc>) {
         MockClockPerThread::with(|clock| {
             if clock.is_mocked {
@@ -77,6 +74,7 @@ impl Clock {
         });
     }
 
+    // gets mocked instant
     pub fn instant() -> Instant {
         MockClockPerThread::with(|clock| {
             if clock.is_mocked {
@@ -87,10 +85,12 @@ impl Clock {
         })
     }
 
+    // returns time pushed by `Self::push_utc()`
     pub fn utc() -> DateTime<chrono::Utc> {
         MockClockPerThread::with(|clock| {
             if clock.is_mocked {
-                let x = clock.pop_utc();
+                clock.utc_call_count += 1;
+                let x = clock.utc.pop_front();
                 match x {
                     Some(t) => t,
                     None => {
@@ -103,6 +103,7 @@ impl Clock {
         })
     }
 
+    // returns number of calls  to `Self::utc` since `Self::mock()` was called.
     pub fn utc_call_count() -> u64 {
         MockClockPerThread::with(|clock| clock.utc_call_count)
     }

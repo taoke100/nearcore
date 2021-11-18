@@ -297,11 +297,12 @@ impl GenesisConfig {
     ///
     /// It panics if file cannot be open or read, or the contents cannot be parsed from JSON to the
     /// GenesisConfig structure.
-    pub fn from_file<P: AsRef<Path>>(path: P) -> Self {
-        let reader = BufReader::new(File::open(path).expect("Could not open genesis config file."));
-        let genesis_config: GenesisConfig =
-            serde_json::from_reader(reader).expect("Failed to deserialize the genesis records.");
-        genesis_config
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, &'static str> {
+        let reader =
+            BufReader::new(File::open(path).map_err(|_e| "Could not open genesis config file.")?);
+        let genesis_config: GenesisConfig = serde_json::from_reader(reader)
+            .map_err(|_e| "Failed to deserialize the genesis records.")?;
+        Ok(genesis_config)
     }
 
     /// Writes GenesisConfig to the file.
@@ -496,7 +497,7 @@ impl Genesis {
         P1: AsRef<Path>,
         P2: AsRef<Path>,
     {
-        let config = GenesisConfig::from_file(config_path);
+        let config = GenesisConfig::from_file(config_path).unwrap();
         let records = GenesisRecords::from_file(records_path);
         Self::new(config, records)
     }

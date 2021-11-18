@@ -9,7 +9,7 @@ use actix;
 use near_primitives::time::Clock;
 use num_rational::Rational;
 use serde::{Deserialize, Serialize};
-use tracing::info;
+use tracing::{error, info};
 
 use near_chain_configs::{
     get_initial_supply, ClientConfig, Genesis, GenesisConfig, LogSummaryStyle,
@@ -462,12 +462,11 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn from_file(path: &Path) -> Self {
-        let mut file = File::open(path)
-            .unwrap_or_else(|_| panic!("Could not open config file: `{}`", path.display()));
+    pub fn from_file(path: &Path) -> Result<Self, &str> {
+        let mut file = File::open(path).map_err(|_| "Could not open config file")?;
         let mut content = String::new();
         file.read_to_string(&mut content).expect("Could not read from config file.");
-        Config::from(content.as_str())
+        Ok(Config::from(content.as_str()))
     }
 
     pub fn write_to_file(&self, path: &Path) {
@@ -822,12 +821,18 @@ pub fn init_configs(
     boot_nodes: Option<&str>,
     max_gas_burnt_view: Option<Gas>,
 ) {
+    info!("creating directory at {:?}", dir);
     fs::create_dir_all(dir).expect("Failed to create directory");
     // Check if config already exists in home dir.
+
     if dir.join(CONFIG_FILENAME).exists() {
-        let config = Config::from_file(&dir.join(CONFIG_FILENAME));
-        let genesis_config = GenesisConfig::from_file(&dir.join(config.genesis_file));
-        panic!("Found existing config in {} with chain-id = {}. Use unsafe_reset_all to clear the folder.", dir.display(), genesis_config.chain_id);
+        let config = Config::from_file(&dir.join(CONFIG_FILENAME)).ok();
+        let genesis = if let Some(config) = config {
+            Some(GenesisConfig::from_file(&dir.join(config.genesis_file)).ok()).flatten()
+        } else {
+            None
+        };
+        panic!("Found existing config in {:?} with chain-id = {:?}. Use unsafe_reset_all to clear the folder. ", dir.display(), genesis.map(|x|x.chain_id));
     }
 
     let mut config = Config::default();
@@ -837,11 +842,11 @@ pub fn init_configs(
 
     if let Some(url) = download_config_url {
         download_config(&url.to_string(), &dir.join(CONFIG_FILENAME));
-        config = Config::from_file(&dir.join(CONFIG_FILENAME));
+        config = Config::from_file(&dir.join(CONFIG_FILENAME)).unwrap();
     } else if should_download_config {
         let url = get_config_url(&chain_id);
         download_config(&url, &dir.join(CONFIG_FILENAME));
-        config = Config::from_file(&dir.join(CONFIG_FILENAME));
+        config = Config::from_file(&dir.join(CONFIG_FILENAME)).unwrap();
     }
 
     if let Some(nodes) = boot_nodes {
@@ -898,8 +903,15 @@ pub fn init_configs(
                 let url = get_genesis_url(&chain_id);
                 download_genesis(&url, &genesis_path);
             } else {
-                genesis_path_str =
-                    genesis.unwrap_or_else(|| panic!("Genesis file is required for {}.", &chain_id))
+                genesis_path_str = if let Some(genesis) = genesis {
+                    genesis
+                } else {
+                    panic!(
+                        "Genesis file is required for {}.\
+                         Use <--genesis|--download-genesis>",
+                        &chain_id
+                    );
+                };
             }
 
             let mut genesis = Genesis::from_file(&genesis_path_str);
@@ -1159,8 +1171,8 @@ impl From<NodeKeyFile> for KeyFile {
 }
 
 pub fn load_config_without_genesis_records(dir: &Path) -> NearConfig {
-    let config = Config::from_file(&dir.join(CONFIG_FILENAME));
-    let genesis_config = GenesisConfig::from_file(&dir.join(&config.genesis_file));
+    let config = Config::from_file(&dir.join(CONFIG_FILENAME)).unwrap();
+    let genesis_config = GenesisConfig::from_file(&dir.join(&config.genesis_file)).unwrap();
     let genesis_records_file = if let Some(genesis_records_file) = &config.genesis_records_file {
         dir.join(genesis_records_file)
     } else {

@@ -46,7 +46,7 @@ use near_store::{
     WrappedTrieChanges,
 };
 
-use crate::chain::{Chain, NUM_EPOCHS_TO_KEEP_STORE_DATA};
+use crate::chain::{Chain, DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA};
 use crate::store::ChainStoreAccess;
 use crate::types::{
     ApplySplitStateResult, ApplyTransactionResult, BlockHeaderInfo, ChainGenesis,
@@ -1047,7 +1047,7 @@ impl RuntimeAdapter for KeyValueRuntime {
                 .unwrap_or_default()
                 .map(|h| h.height())
                 .unwrap_or_default();
-            block_height.saturating_sub(NUM_EPOCHS_TO_KEEP_STORE_DATA * self.epoch_length)
+            block_height.saturating_sub(DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA * self.epoch_length)
         } else {
             0
         }

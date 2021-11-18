@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use actix;
+use near_chain::chain::DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA;
 use near_primitives::time::Clock;
 use num_rational::Rational;
 use serde::{Deserialize, Serialize};
@@ -431,6 +432,7 @@ pub struct Config {
     /// If set, overrides value in genesis configuration.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_gas_burnt_view: Option<Gas>,
+    pub num_epochs_to_keep_store_data: u64,
 }
 
 impl Default for Config {
@@ -457,6 +459,7 @@ impl Default for Config {
             view_client_throttle_period: default_view_client_throttle_period(),
             trie_viewer_state_size_limit: default_trie_viewer_state_size_limit(),
             max_gas_burnt_view: None,
+            num_epochs_to_keep_store_data: DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA,
         }
     }
 }

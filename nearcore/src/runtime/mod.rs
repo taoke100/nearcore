@@ -8,7 +8,6 @@ use borsh::ser::BorshSerialize;
 use borsh::BorshDeserialize;
 use tracing::{debug, error, info, warn};
 
-use near_chain::chain::NUM_EPOCHS_TO_KEEP_STORE_DATA;
 use near_chain::types::{
     ApplySplitStateResult, ApplyTransactionResult, BlockHeaderInfo, ValidatorInfoIdentifier,
 };
@@ -62,6 +61,7 @@ use crate::shard_tracker::{ShardTracker, TrackedConfig};
 use crate::migrations::load_migration_data;
 use crate::NearConfig;
 use errors::FromStateViewerErrors;
+use near_chain::chain::DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA;
 use near_primitives::runtime::config_store::{RuntimeConfigStore, INITIAL_TESTNET_CONFIG};
 use near_primitives::runtime::migration_data::{MigrationData, MigrationFlags};
 use near_primitives::shard_layout::{
@@ -143,6 +143,8 @@ pub struct NightshadeRuntime {
     shard_tracker: ShardTracker,
     genesis_state_roots: Vec<StateRoot>,
     migration_data: Arc<MigrationData>,
+
+    num_epochs_to_keep_store_data: u64,
 }
 
 impl NightshadeRuntime {
@@ -161,6 +163,7 @@ impl NightshadeRuntime {
             trie_viewer_state_size_limit,
             max_gas_burnt_view,
             None,
+            config.config.num_epochs_to_keep_store_data,
         )
     }
 
@@ -172,6 +175,7 @@ impl NightshadeRuntime {
         trie_viewer_state_size_limit: Option<u64>,
         max_gas_burnt_view: Option<Gas>,
         runtime_config_store: Option<RuntimeConfigStore>,
+        num_epochs_to_keep_store_data: u64,
     ) -> Self {
         let runtime_config_store = match runtime_config_store {
             Some(store) => store,
@@ -211,6 +215,7 @@ impl NightshadeRuntime {
             shard_tracker,
             genesis_state_roots: state_roots,
             migration_data: Arc::new(load_migration_data(&genesis.config.chain_id)),
+            num_epochs_to_keep_store_data,
         }
     }
 
@@ -228,6 +233,7 @@ impl NightshadeRuntime {
             None,
             None,
             Some(runtime_config_store),
+            DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA,
         )
     }
 
@@ -1224,7 +1230,8 @@ impl RuntimeAdapter for NightshadeRuntime {
             // maintain pointers to avoid cloning.
             let mut last_block_in_prev_epoch = *epoch_first_block_info.prev_hash();
             let mut epoch_start_height = *epoch_first_block_info.height();
-            for _ in 0..NUM_EPOCHS_TO_KEEP_STORE_DATA - 1 {
+
+            for _ in 0..self.num_epochs_to_keep_store_data - 1 {
                 let epoch_first_block =
                     *epoch_manager.get_block_info(&last_block_in_prev_epoch)?.epoch_first_block();
                 let epoch_first_block_info = epoch_manager.get_block_info(&epoch_first_block)?;
@@ -2094,6 +2101,7 @@ mod test {
                 None,
                 None,
                 Some(RuntimeConfigStore::free()),
+                DEFAULT_NUM_EPOCHS_TO_KEEP_STORE_DATA,
             );
             let (_store, state_roots) = runtime.genesis_state();
             let genesis_hash = hash(&vec![0]);

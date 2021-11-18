@@ -17,7 +17,6 @@ fn empty_chain() {
     Clock::add_utc(now);
 
     let (chain, _, _) = setup();
-    let count_instant = { Clock::instant_call_count() };
     let count_utc = { Clock::utc_call_count() };
 
     assert_eq!(chain.head().unwrap().height, 0);
@@ -27,7 +26,6 @@ fn empty_chain() {
     #[cfg(not(feature = "nightly_protocol"))]
     assert_eq!(hash, CryptoHash::from_str("BkrZeGCDnYJGAdc3G1fb1P8FMbnNDhBn6w5DjhQeNAdp").unwrap());
     assert_eq!(count_utc, 1);
-    assert_eq!(count_instant, 0);
 }
 
 #[test]
@@ -60,7 +58,6 @@ fn build_chain() {
         assert_eq!(tip.unwrap().height, i + 1);
     }
     assert_eq!(chain.head().unwrap().height, 4);
-    let count_instant = Clock::instant_call_count();
     let count_utc = Clock::utc_call_count();
     assert_eq!(count_utc, 5);
     assert_eq!(count_instant, 0);

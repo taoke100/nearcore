@@ -9,7 +9,7 @@ use actix;
 use near_primitives::time::Clock;
 use num_rational::Rational;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
+use tracing::info;
 
 use near_chain_configs::{
     get_initial_supply, ClientConfig, Genesis, GenesisConfig, LogSummaryStyle,

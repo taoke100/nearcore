@@ -118,6 +118,20 @@ mod tests {
     use super::*;
 
     #[test]
+    #[should_panic]
+    fn test_clock_panic_utc() {
+        let _mock_clock_guard = MockClockGuard::default();
+        Clock::utc();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_clock_panic_instant() {
+        let _mock_clock_guard = MockClockGuard::default();
+        Clock::instant();
+    }
+
+    #[test]
     fn test_clock() {
         {
             let mock_clock_guard = MockClockGuard::default();
@@ -158,8 +172,9 @@ mod tests {
             );
 
             assert_eq!(mock_clock_guard.utc_call_count(), 3);
+            drop(mock_clock_guard);
         }
         let mock_clock_guard = MockClockGuard::default();
-        assert_eq!(mock_clock_guard.utc_call_count(), 3);
+        assert_eq!(mock_clock_guard.utc_call_count(), 0);
     }
 }

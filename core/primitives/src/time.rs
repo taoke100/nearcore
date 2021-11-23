@@ -10,14 +10,17 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 
 #[derive(Default)]
-/// Stores the mocking state.
-struct MockClockPerThread {
+struct MockClockPerState {
     /// List of timestamp, we will return one timestamp to each call.
     utc: VecDeque<DateTime<Utc>>,
     /// Number of times `utc()` method was called since we started mocking.
     utc_call_count: u64,
-    /// False for default behaviour, true if we want to the mocking logic to be enabled.
-    is_mocked: bool,
+}
+
+/// Stores the mocking state.
+#[derive(Default)]
+struct MockClockPerThread {
+    mock: Option<MockClockPerState>,
 }
 
 impl MockClockPerThread {
@@ -37,10 +40,11 @@ pub struct MockClockGuard {}
 impl MockClockGuard {
     /// Adds timestamp to queue, it will be returned in `Self::utc()`.
     pub fn add_utc(&self, mock_date: DateTime<chrono::Utc>) {
-        MockClockPerThread::with(|clock| {
-            if clock.is_mocked {
+        MockClockPerThread::with(|clock| match &mut clock.mock {
+            Some(clock) => {
                 clock.utc.push_back(mock_date);
-            } else {
+            }
+            None => {
                 panic!("Use MockClockGuard in your test");
             }
         });
@@ -48,7 +52,12 @@ impl MockClockGuard {
 
     /// Returns number of calls  to `Self::utc` since `Self::mock()` was called.
     pub fn utc_call_count(&self) -> u64 {
-        MockClockPerThread::with(|clock| clock.utc_call_count)
+        MockClockPerThread::with(|clock| match &mut clock.mock {
+            Some(clock) => clock.utc_call_count,
+            None => {
+                panic!("Use MockClockGuard in your test");
+            }
+        })
     }
 }
 
@@ -70,31 +79,26 @@ pub struct Clock {}
 impl Clock {
     /// Turns the mocking logic on.
     fn set_mock() {
-        MockClockPerThread::with(|clock| {
-            clock.is_mocked = true;
-        });
+        MockClockPerThread::with(|clock| clock.mock = Some(MockClockPerState::default()))
     }
 
     /// Resets mocks to default state.
     fn reset() {
-        MockClockPerThread::with(|clock| *clock = MockClockPerThread::default());
+        MockClockPerThread::with(|clock| clock.mock = None);
     }
 
     /// Gets mocked instant.
     pub fn instant() -> Instant {
-        MockClockPerThread::with(|clock| {
-            if clock.is_mocked {
-                panic!("Mock clock run out of samples");
-            } else {
-                Instant::now()
-            }
+        MockClockPerThread::with(|clock| match &mut clock.mock {
+            Some(_clock) => panic!("Mock clock run out of samples"),
+            None => Instant::now(),
         })
     }
 
     /// Returns time pushed by `Self::push_utc()`
     pub fn utc() -> DateTime<chrono::Utc> {
-        MockClockPerThread::with(|clock| {
-            if clock.is_mocked {
+        MockClockPerThread::with(|clock| match &mut clock.mock {
+            Some(clock) => {
                 clock.utc_call_count += 1;
                 let x = clock.utc.pop_front();
                 match x {
@@ -103,9 +107,8 @@ impl Clock {
                         panic!("Mock clock run out of samples");
                     }
                 }
-            } else {
-                chrono::Utc::now()
             }
+            None => chrono::Utc::now(),
         })
     }
 }

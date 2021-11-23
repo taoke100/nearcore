@@ -4,7 +4,7 @@ use chrono;
 use chrono::TimeZone;
 use near_logger_utils::init_test_logger;
 use near_primitives::hash::CryptoHash;
-use near_primitives::time::{Clock, MockClockGuard};
+use near_primitives::time::MockClockGuard;
 use near_primitives::version::PROTOCOL_VERSION;
 use num_rational::Rational;
 use std::str::FromStr;
@@ -12,12 +12,12 @@ use std::str::FromStr;
 #[test]
 fn empty_chain() {
     init_test_logger();
-    let _mock_clock_guard = MockClockGuard::default();
+    let mock_clock_guard = MockClockGuard::default();
     let now = chrono::Utc.ymd(2020, 10, 1).and_hms_milli(0, 0, 1, 444);
-    Clock::add_utc(now);
+    mock_clock_guard.add_utc(now);
 
     let (chain, _, _) = setup();
-    let count_utc = { Clock::utc_call_count() };
+    let count_utc = { mock_clock_guard.utc_call_count() };
 
     assert_eq!(chain.head().unwrap().height, 0);
     let hash = chain.head().unwrap().last_block_hash;
@@ -31,9 +31,9 @@ fn empty_chain() {
 #[test]
 fn build_chain() {
     init_test_logger();
-    let _mock_clock_guard = MockClockGuard::default();
+    let mock_clock_guard = MockClockGuard::default();
     for i in 0..5 {
-        Clock::add_utc(chrono::Utc.ymd(2020, 10, 1).and_hms_milli(0, 0, 3, 444 + i));
+        mock_clock_guard.add_utc(chrono::Utc.ymd(2020, 10, 1).and_hms_milli(0, 0, 3, 444 + i));
     }
 
     let (mut chain, _, signer) = setup();
@@ -58,7 +58,7 @@ fn build_chain() {
         assert_eq!(tip.unwrap().height, i + 1);
     }
     assert_eq!(chain.head().unwrap().height, 4);
-    let count_utc = Clock::utc_call_count();
+    let count_utc = mock_clock_guard.utc_call_count();
     assert_eq!(count_utc, 5);
     assert_eq!(count_instant, 0);
     #[cfg(feature = "nightly_protocol")]

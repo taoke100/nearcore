@@ -10,18 +10,15 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 
 #[derive(Default)]
-// stores mocking state
+/// Stores the mocking state.
 struct MockClockPerThread {
-    // list of mocks, they will be returned each time call to get current time is made
+    /// List of timestamp, we will return one timestamp to each call.
     utc: VecDeque<DateTime<Utc>>,
-    // number of times `utc()` method was called since we started mocking
+    /// Number of times `utc()` method was called since we started mocking.
     utc_call_count: u64,
-    // false for default behaviour
-    // true when we want to enable mocking logic
+    /// False for default behaviour, true if we want to the mocking logic to be enabled.
     is_mocked: bool,
 }
-
-pub struct Clock {}
 
 impl MockClockPerThread {
     fn with<F, T>(f: F) -> T
@@ -37,6 +34,24 @@ impl MockClockPerThread {
 
 pub struct MockClockGuard {}
 
+impl MockClockGuard {
+    /// Adds timestamp to queue, it will be returned in `Self::utc()`.
+    pub fn add_utc(&self, mock_date: DateTime<chrono::Utc>) {
+        MockClockPerThread::with(|clock| {
+            if clock.is_mocked {
+                clock.utc.push_back(mock_date);
+            } else {
+                panic!("Use MockClockGuard in your test");
+            }
+        });
+    }
+
+    /// Returns number of calls  to `Self::utc` since `Self::mock()` was called.
+    pub fn utc_call_count(&self) -> u64 {
+        MockClockPerThread::with(|clock| clock.utc_call_count)
+    }
+}
+
 impl Default for MockClockGuard {
     fn default() -> Self {
         Clock::set_mock();
@@ -50,31 +65,22 @@ impl Drop for MockClockGuard {
     }
 }
 
+pub struct Clock {}
+
 impl Clock {
-    // turns on mocking logic
+    /// Turns the mocking logic on.
     fn set_mock() {
         MockClockPerThread::with(|clock| {
             clock.is_mocked = true;
         });
     }
 
-    // removes mock
+    /// Resets mocks to default state.
     fn reset() {
         MockClockPerThread::with(|clock| *clock = MockClockPerThread::default());
     }
 
-    // adds timestamp to queue, it will be returned in `Self::utc()`
-    pub fn add_utc(mock_date: DateTime<chrono::Utc>) {
-        MockClockPerThread::with(|clock| {
-            if clock.is_mocked {
-                clock.utc.push_back(mock_date);
-            } else {
-                panic!("Use MockClockGuard in your test");
-            }
-        });
-    }
-
-    // gets mocked instant
+    /// Gets mocked instant.
     pub fn instant() -> Instant {
         MockClockPerThread::with(|clock| {
             if clock.is_mocked {
@@ -85,7 +91,7 @@ impl Clock {
         })
     }
 
-    // returns time pushed by `Self::push_utc()`
+    /// Returns time pushed by `Self::push_utc()`
     pub fn utc() -> DateTime<chrono::Utc> {
         MockClockPerThread::with(|clock| {
             if clock.is_mocked {
@@ -102,11 +108,6 @@ impl Clock {
             }
         })
     }
-
-    // returns number of calls  to `Self::utc` since `Self::mock()` was called.
-    pub fn utc_call_count() -> u64 {
-        MockClockPerThread::with(|clock| clock.utc_call_count)
-    }
 }
 
 #[cfg(test)]
@@ -115,44 +116,47 @@ mod tests {
 
     #[test]
     fn test_clock() {
-        Clock::set_mock();
-        let utc_now = Utc::now();
-        Clock::add_utc(
-            utc_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(1)).unwrap())
-                .unwrap(),
-        );
-        Clock::add_utc(
-            utc_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(2)).unwrap())
-                .unwrap(),
-        );
-        Clock::add_utc(
-            utc_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(3)).unwrap())
-                .unwrap(),
-        );
-        assert_eq!(
-            Clock::utc(),
-            utc_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(1)).unwrap())
-                .unwrap(),
-        );
-        assert_eq!(
-            Clock::utc(),
-            utc_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(2)).unwrap())
-                .unwrap(),
-        );
-        assert_eq!(
-            Clock::utc(),
-            utc_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(3)).unwrap())
-                .unwrap(),
-        );
+        {
+            let mock_clock_guard = MockClockGuard::default();
 
-        assert_eq!(Clock::utc_call_count(), 3);
-        Clock::reset();
-        assert_eq!(Clock::utc_call_count(), 0);
+            let utc_now = Utc::now();
+            mock_clock_guard.add_utc(
+                utc_now
+                    .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(1)).unwrap())
+                    .unwrap(),
+            );
+            mock_clock_guard.add_utc(
+                utc_now
+                    .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(2)).unwrap())
+                    .unwrap(),
+            );
+            mock_clock_guard.add_utc(
+                utc_now
+                    .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(3)).unwrap())
+                    .unwrap(),
+            );
+            assert_eq!(
+                Clock::utc(),
+                utc_now
+                    .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(1)).unwrap())
+                    .unwrap(),
+            );
+            assert_eq!(
+                Clock::utc(),
+                utc_now
+                    .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(2)).unwrap())
+                    .unwrap(),
+            );
+            assert_eq!(
+                Clock::utc(),
+                utc_now
+                    .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(3)).unwrap())
+                    .unwrap(),
+            );
+
+            assert_eq!(mock_clock_guard.utc_call_count(), 3);
+        }
+        let mock_clock_guard = MockClockGuard::default();
+        assert_eq!(mock_clock_guard.utc_call_count(), 3);
     }
 }

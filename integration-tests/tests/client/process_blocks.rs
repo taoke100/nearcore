@@ -939,7 +939,7 @@ fn client_sync_headers() {
             }),
         );
         client.do_send(NetworkClientMessages::NetworkInfo(NetworkInfo {
-            active_peers: vec![FullPeerInfo {
+            connected_peers: vec![FullPeerInfo {
                 peer_info: peer_info2.clone(),
                 chain_info: PeerChainInfoV2 {
                     genesis_id: Default::default(),
@@ -949,7 +949,7 @@ fn client_sync_headers() {
                 },
                 edge_info: EdgeInfo::default(),
             }],
-            num_active_peers: 1,
+            num_connected_peers: 1,
             peer_max_count: 1,
             highest_height_peers: vec![FullPeerInfo {
                 peer_info: peer_info2.clone(),

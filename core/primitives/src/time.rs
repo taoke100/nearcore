@@ -23,8 +23,16 @@ struct MockClockPerThread {
 
 pub struct Clock {}
 
-thread_local! {
-    static INSTANCE: RefCell<MockClockPerThread> = RefCell::default()
+impl MockClockPerThread {
+    fn with<F, T>(f: F) -> T
+    where
+        F: FnOnce(&mut MockClockPerThread) -> T,
+    {
+        thread_local! {
+            static INSTANCE: RefCell<MockClockPerThread> = RefCell::default()
+        }
+        INSTANCE.with(|it| f(&mut *it.borrow_mut()))
+    }
 }
 
 pub struct MockClockGuard {}
@@ -45,21 +53,19 @@ impl Drop for MockClockGuard {
 impl Clock {
     // turns on mocking logic
     fn set_mock() {
-        INSTANCE.with(|clock| {
-            let clock = &mut clock.borrow_mut();
+        MockClockPerThread::with(|clock| {
             clock.is_mocked = true;
         });
     }
 
     // removes mock
     fn reset() {
-        INSTANCE.with(|clock| *clock.borrow_mut() = MockClockPerThread::default());
+        MockClockPerThread::with(|clock| *clock = MockClockPerThread::default());
     }
 
     // adds timestamp to queue, it will be returned in `Self::utc()`
     pub fn add_utc(mock_date: DateTime<chrono::Utc>) {
-        INSTANCE.with(|clock| {
-            let clock = &mut clock.borrow_mut();
+        MockClockPerThread::with(|clock| {
             if clock.is_mocked {
                 clock.utc.push_back(mock_date);
             } else {
@@ -70,8 +76,7 @@ impl Clock {
 
     // gets mocked instant
     pub fn instant() -> Instant {
-        INSTANCE.with(|clock| {
-            let clock = clock.borrow();
+        MockClockPerThread::with(|clock| {
             if clock.is_mocked {
                 panic!("Mock clock run out of samples");
             } else {
@@ -82,8 +87,7 @@ impl Clock {
 
     // returns time pushed by `Self::push_utc()`
     pub fn utc() -> DateTime<chrono::Utc> {
-        INSTANCE.with(|clock| {
-            let clock = &mut clock.borrow_mut();
+        MockClockPerThread::with(|clock| {
             if clock.is_mocked {
                 clock.utc_call_count += 1;
                 let x = clock.utc.pop_front();
@@ -101,7 +105,7 @@ impl Clock {
 
     // returns number of calls  to `Self::utc` since `Self::mock()` was called.
     pub fn utc_call_count() -> u64 {
-        INSTANCE.with(|clock| clock.borrow().utc_call_count)
+        MockClockPerThread::with(|clock| clock.utc_call_count)
     }
 }
 

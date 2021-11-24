@@ -155,6 +155,8 @@ impl Clock {
 mod tests {
     use super::*;
     use std::ops::Add;
+    use std::thread;
+    use std::thread::sleep;
 
     #[test]
     #[should_panic]
@@ -242,5 +244,17 @@ mod tests {
 
         let mock_clock_guard = MockClockGuard::default();
         assert_eq!(mock_clock_guard.instant_call_count(), 0);
+    }
+
+    #[test]
+    fn test_threading() {
+        thread::spawn(|| {
+            for _i in 1..10 {
+                // This would panic if every thread used separate mocking.
+                let mock_clock_guard = MockClockGuard::default();
+                sleep(Duration::from_millis(100));
+                assert_eq!(mock_clock_guard.instant_call_count(), 0);
+            }
+        });
     }
 }

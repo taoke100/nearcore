@@ -100,6 +100,8 @@ impl Drop for MockClockGuard {
     }
 }
 
+/// We switched to using `Clock` in production for time mocking.
+/// You are supposed to use `Clock` to get current time.
 pub struct Clock {}
 
 impl Clock {

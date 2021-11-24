@@ -1,13 +1,31 @@
-use std::default::Default;
-
+/// Provides structs used for getting time.
+///
+/// Example:
+/// ```rust, ignore
+/// fn some_production_function() {
+///     let start = Clock::instant();
+///     // some computation
+///     let end = Clock::instant();
+///     assert!(end.duration_since(start) == Duration::from_secs(1));
+/// }
+///
+/// Test:
+/// fn test() {
+///     let mock_clock_guard = MockClockGuard::default();
+///     mock_clock_guard.add_instant(Instant::now());
+///     mock_clock_guard.add_instant(Instant::now() + Duration::from_secs(1));
+///
+///     // This won't crash anymore as long as mock works.
+///     some_production_function();
+/// }
+/// ```
 use chrono;
-
-pub use chrono::Utc;
-pub use std::time::{Duration, Instant};
-
 use chrono::DateTime;
+pub use chrono::Utc;
 use std::cell::RefCell;
 use std::collections::VecDeque;
+use std::default::Default;
+pub use std::time::{Duration, Instant};
 
 #[derive(Default)]
 struct MockClockPerState {

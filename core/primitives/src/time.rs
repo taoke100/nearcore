@@ -136,7 +136,8 @@ impl Clock {
         MockClockPerThread::with(|clock| clock.mock = None);
     }
 
-    /// Gets mocked instant.
+    /// This methods gets current time as `std::Instant`
+    /// unless it's mocked, then returns time added by `Self::add_utc(...)`
     pub fn instant() -> Instant {
         MockClockPerThread::with(|clock| match &mut clock.mock {
             Some(clock) => {
@@ -153,7 +154,8 @@ impl Clock {
         })
     }
 
-    /// Returns time pushed by `Self::add_utc()`
+    /// This methods gets current time as `std::Instant`
+    /// unless it's mocked, then returns time added by `Self::add_instant(...)`
     pub fn utc() -> DateTime<chrono::Utc> {
         MockClockPerThread::with(|clock| match &mut clock.mock {
             Some(clock) => {
@@ -270,7 +272,7 @@ mod tests {
     fn test_threading() {
         thread::spawn(|| {
             for _i in 1..10 {
-                // This would panic if every thread used separate mocking.
+                // This would panic if every thread used the same mocking.
                 let mock_clock_guard = MockClockGuard::default();
                 sleep(Duration::from_millis(100));
                 assert_eq!(mock_clock_guard.instant_call_count(), 0);

@@ -60,6 +60,7 @@ fn build_chain() {
     assert_eq!(chain.head().unwrap().height, 4);
     let count_utc = mock_clock_guard.utc_call_count();
     assert_eq!(count_utc, 5);
+    let count_instant = mock_clock_guard.instant_call_count();
     assert_eq!(count_instant, 0);
     #[cfg(feature = "nightly_protocol")]
     assert_eq!(

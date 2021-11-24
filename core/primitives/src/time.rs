@@ -105,7 +105,10 @@ pub struct Clock {}
 impl Clock {
     /// Turns the mocking logic on.
     fn set_mock() {
-        MockClockPerThread::with(|clock| clock.mock = Some(MockClockPerState::default()))
+        MockClockPerThread::with(|clock| {
+            assert!(clock.mock.is_none());
+            clock.mock = Some(MockClockPerState::default())
+        })
     }
 
     /// Resets mocks to default state.
@@ -151,6 +154,7 @@ impl Clock {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ops::Add;
 
     #[test]
     #[should_panic]
@@ -169,8 +173,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_two_guards() {
-        let mock_clock_guard = MockClockGuard::default();
+        let mock_clock_guard1 = MockClockGuard::default();
         let mock_clock_guard2 = MockClockGuard::default();
+        assert_eq!(mock_clock_guard1.instant_call_count(), 0);
+        assert_eq!(mock_clock_guard2.instant_call_count(), 0);
     }
 
     #[test]
@@ -224,39 +230,12 @@ mod tests {
         let mock_clock_guard = MockClockGuard::default();
 
         let instant_now = Instant::now();
-        mock_clock_guard.add_instant(
-            instant_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(1)).unwrap())
-                .unwrap(),
-        );
-        mock_clock_guard.add_instant(
-            instant_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(2)).unwrap())
-                .unwrap(),
-        );
-        mock_clock_guard.add_instant(
-            instant_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(3)).unwrap())
-                .unwrap(),
-        );
-        assert_eq!(
-            Clock::instant(),
-            instant_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(1)).unwrap())
-                .unwrap(),
-        );
-        assert_eq!(
-            Clock::instant(),
-            instant_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(2)).unwrap())
-                .unwrap(),
-        );
-        assert_eq!(
-            Clock::instant(),
-            instant_now
-                .checked_add_signed(chrono::Duration::from_std(Duration::from_secs(3)).unwrap())
-                .unwrap(),
-        );
+        mock_clock_guard.add_instant(instant_now.add(Duration::from_secs(1)));
+        mock_clock_guard.add_instant(instant_now.add(Duration::from_secs(2)));
+        mock_clock_guard.add_instant(instant_now.add(Duration::from_secs(3)));
+        assert_eq!(Clock::instant(), instant_now.add(Duration::from_secs(1)));
+        assert_eq!(Clock::instant(), instant_now.add(Duration::from_secs(2)));
+        assert_eq!(Clock::instant(), instant_now.add(Duration::from_secs(3)));
 
         assert_eq!(mock_clock_guard.instant_call_count(), 3);
         drop(mock_clock_guard);

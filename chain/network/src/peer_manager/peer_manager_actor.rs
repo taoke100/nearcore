@@ -384,7 +384,7 @@ impl PeerManagerActor {
                 warn!(
                     message = "Peer bandwidth exceeded threshold",
                     ?peer_id,
-                    msg_received_count,
+                    bandwidth_used,
                     msg_received_count
                 );
             }

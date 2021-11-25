@@ -1577,7 +1577,7 @@ impl Actor for PeerManagerActor {
         // Update routing table and prune edges that are no longer reachable.
         self.update_routing_table_trigger(ctx);
 
-        // Update routing table and prune edges that are no longer reachable.
+        // Periodically prints bandwidth stats for each peer.
         self.report_bandwidth_stats(ctx, REPORT_BANDWIDTH_STATS_TRIGGER_INTERVAL);
     }
 

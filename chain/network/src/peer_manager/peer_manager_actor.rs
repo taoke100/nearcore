@@ -370,8 +370,8 @@ impl PeerManagerActor {
         );
     }
 
-    /// Update routing table and prune edges that are no longer reachable.
-    fn report_bandwidth_stats(&mut self, ctx: &mut Context<Self>, every: Duration) {
+    /// Periodically prints bandwidth stats for each peer.
+    fn report_bandwidth_stats_trigger(&mut self, ctx: &mut Context<Self>, every: Duration) {
         let mut total_bandwidth_used_by_all_peers: usize = 0;
         let mut total_msg_received_count: usize = 0;
         for (peer_id, active_peer) in self.active_peers.iter_mut() {
@@ -398,7 +398,7 @@ impl PeerManagerActor {
         );
 
         near_performance_metrics::actix::run_later(ctx, every, move |act, ctx| {
-            act.report_bandwidth_stats(ctx, every);
+            act.report_bandwidth_stats_trigger(ctx, every);
         });
     }
 
@@ -1578,7 +1578,7 @@ impl Actor for PeerManagerActor {
         self.update_routing_table_trigger(ctx);
 
         // Periodically prints bandwidth stats for each peer.
-        self.report_bandwidth_stats(ctx, REPORT_BANDWIDTH_STATS_TRIGGER_INTERVAL);
+        self.report_bandwidth_stats_trigger(ctx, REPORT_BANDWIDTH_STATS_TRIGGER_INTERVAL);
     }
 
     /// Try to gracefully disconnect from active peers.

@@ -303,10 +303,7 @@ impl PeerManagerActor {
                 Ok(RoutingTableMessagesResponse::AddVerifiedEdgesResponse(filtered_edges)) => {
                     // Broadcast new edges to all other peers.
                     if broadcast_edges && act.adv_helper.can_broadcast_edges() {
-                        let new_data = RoutingTableSync {
-                            edges: filtered_edges,
-                            accounts: Default::default(),
-                        };
+                        let new_data = RoutingTableSync::from_edges(filtered_edges);
                         act.broadcast_message(
                             ctx,
                             SendMessage { message: PeerMessage::RoutingTableSync(new_data) },
@@ -330,7 +327,7 @@ impl PeerManagerActor {
             self.routing_table_view.add_account(account.clone());
         }
 
-        let new_data = RoutingTableSync { edges: Default::default(), accounts };
+        let new_data = RoutingTableSync::from_accounts(accounts);
 
         if !new_data.is_empty() {
             self.broadcast_message(
@@ -583,10 +580,10 @@ impl PeerManagerActor {
 
         near_performance_metrics::actix::run_later(ctx, WAIT_FOR_SYNC_DELAY, move |act, ctx| {
             let _ = addr.do_send(SendMessage {
-                message: PeerMessage::RoutingTableSync(RoutingTableSync {
-                    edges: known_edges,
-                    accounts: known_accounts,
-                }),
+                message: PeerMessage::RoutingTableSync(RoutingTableSync::new(
+                    known_edges,
+                    known_accounts,
+                )),
             });
 
             // Ask for peers list on connection.
@@ -1793,9 +1790,9 @@ impl PeerManagerActor {
             NetworkRequests::FetchRoutingTable => {
                 NetworkResponses::RoutingTableInfo(self.routing_table_view.info())
             }
-            NetworkRequests::RoutingTableSync { peer_id, routing_table_sync: sync_data } => {
+            NetworkRequests::RoutingTableSync { peer_id, routing_table_sync } => {
                 // Process edges and add new edges to the routing table. Also broadcast new edges.
-                let RoutingTableSync { edges, accounts } = sync_data;
+                let (edges, accounts) = routing_table_sync.unpack();
 
                 // Filter known accounts before validating them.
                 let accounts = accounts

@@ -268,16 +268,28 @@ impl From<HandshakeV2> for Handshake {
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Clone, Debug)]
 pub struct RoutingTableSync {
     /// List of known edges from `RoutingTableActor::edges_info`.
-    pub(crate) edges: Vec<Edge>,
+    edges: Vec<Edge>,
     /// List of known `account_id` to `PeerId` mappings.
     /// Useful for `send_message_to_account` method, to route message to particular account.
-    pub(crate) accounts: Vec<AnnounceAccount>,
+    accounts: Vec<AnnounceAccount>,
 }
 
 impl RoutingTableSync {
+    pub(crate) fn new(edges: Vec<Edge>, accounts: Vec<AnnounceAccount>) -> Self {
+        Self { edges, accounts }
+    }
+
+    pub(crate) fn from_edges(edges: Vec<Edge>) -> Self {
+        Self { edges, accounts: Default::default() }
+    }
+
+    pub(crate) fn from_accounts(accounts: Vec<AnnounceAccount>) -> Self {
+        Self { edges: Default::default(), accounts }
+    }
+
     /// Construct from a single edge.
     pub(crate) fn from_edge(edge: Edge) -> Self {
-        Self { edges: vec![edge], accounts: Vec::new() }
+        Self { edges: vec![edge], accounts: Default::default() }
     }
 
     /// Construct from account.
@@ -288,6 +300,10 @@ impl RoutingTableSync {
     /// Is empty.
     pub(crate) fn is_empty(&self) -> bool {
         self.edges.is_empty() && self.accounts.is_empty()
+    }
+
+    pub(crate) fn unpack(self) -> (Vec<Edge>, Vec<AnnounceAccount>) {
+        (self.edges, self.accounts)
     }
 }
 

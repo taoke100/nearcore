@@ -10,6 +10,7 @@ mod route_back_cache;
 pub(crate) mod routing;
 pub(crate) mod routing_table_actor;
 mod utils;
+pub(crate) mod edge_set;
 
 pub use crate::routing::edge::{Edge, EdgeInfo, EdgeType, SimpleEdge};
 #[cfg(feature = "protocol_feature_routing_exchange_algorithm")]

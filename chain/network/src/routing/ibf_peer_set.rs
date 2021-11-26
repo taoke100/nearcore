@@ -1,4 +1,5 @@
-use crate::routing::edge::{Edge, SimpleEdge};
+use crate::routing::edge::SimpleEdge;
+use crate::routing::edge_set::EdgeSet;
 use crate::routing::ibf_set::IbfSet;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_primitives::network::PeerId;
@@ -87,11 +88,11 @@ impl IbfPeerSet {
     }
 
     /// Add IbfSet assigned to given peer, defined by `seed`.
-    pub fn add_peer(
+    pub(crate) fn add_peer(
         &mut self,
         peer_id: PeerId,
         seed: Option<u64>,
-        edges_info: &mut HashMap<(PeerId, PeerId), Edge>,
+        edges_info: &mut EdgeSet,
     ) -> u64 {
         if let Some(ibf_set) = self.peers.get(&peer_id) {
             return ibf_set.get_seed();
@@ -105,8 +106,12 @@ impl IbfPeerSet {
 
         let mut ibf_set = IbfSet::new(seed);
         // Initialize IbfSet with edges
-        for (key, e) in edges_info.iter() {
-            let se = SimpleEdge::new(key.0.clone(), key.1.clone(), e.nonce());
+        for edge in edges_info.iter() {
+            let se = SimpleEdge::new(
+                edge.inner.key().0.clone(),
+                edge.inner.key().1.clone(),
+                edge.inner.nonce(),
+            );
             if let Some(id) = self.slot_map.get(&se) {
                 ibf_set.add_edge(&se, id);
             }
@@ -167,12 +172,11 @@ impl IbfPeerSet {
 #[cfg(test)]
 mod test {
     use crate::routing::edge::{Edge, SimpleEdge};
+    use crate::routing::edge_set::EdgeSet;
     use crate::routing::ibf_peer_set::ValidIBFLevel;
     use crate::routing::ibf_peer_set::{IbfPeerSet, SlotMap, SlotMapId};
     use crate::routing::ibf_set::IbfSet;
     use crate::test_utils::random_peer_id;
-    use near_primitives::network::PeerId;
-    use std::collections::HashMap;
 
     #[test]
     fn test_slot_map() {
@@ -222,8 +226,8 @@ mod test {
         let mut ibf_set = IbfSet::<SimpleEdge>::new(1111);
 
         let edge = Edge::make_fake_edge(peer_id.clone(), peer_id2.clone(), 111);
-        let mut edges_info: HashMap<(PeerId, PeerId), Edge> = Default::default();
-        edges_info.insert((peer_id.clone(), peer_id2.clone()), edge.clone());
+        let mut edges_info: EdgeSet = Default::default();
+        edges_info.insert(edge.clone());
 
         // Add Peer
         ips.add_peer(peer_id.clone(), Some(1111), &mut edges_info);

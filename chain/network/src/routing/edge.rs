@@ -5,6 +5,7 @@ use near_crypto::{KeyType, SecretKey, Signature};
 use near_primitives::borsh::maybestd::sync::Arc;
 use near_primitives::hash::CryptoHash;
 use near_primitives::network::PeerId;
+use std::hash::Hash;
 
 /// Information that will be ultimately used to create a new edge.
 /// It contains nonce proposed for the edge with signature from peer.
@@ -14,6 +15,7 @@ pub struct EdgeInfo {
     pub nonce: u64,
     pub signature: Signature,
 }
+
 impl EdgeInfo {
     pub fn new(peer0: &PeerId, peer1: &PeerId, nonce: u64, secret_key: &SecretKey) -> Self {
         let data = if peer0 < peer1 {

@@ -263,8 +263,7 @@ impl From<HandshakeV2> for Handshake {
     }
 }
 
-/// Represent RoutingTableSync data. It contains required metadata use for routing messages
-/// to particular `PeerId` or `AccountId`.
+/// Contains metadata used for routing messages to particular `PeerId` or `AccountId`.
 #[cfg_attr(feature = "deepsize_feature", derive(DeepSizeOf))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Clone, Debug)]
 pub struct RoutingTableSync {

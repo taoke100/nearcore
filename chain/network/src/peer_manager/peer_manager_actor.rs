@@ -1793,7 +1793,7 @@ impl PeerManagerActor {
             NetworkRequests::FetchRoutingTable => {
                 NetworkResponses::RoutingTableInfo(self.routing_table_view.info())
             }
-            NetworkRequests::Sync { peer_id, sync_data } => {
+            NetworkRequests::RoutingTableSync { peer_id, routing_table_sync: sync_data } => {
                 // Process edges and add new edges to the routing table. Also broadcast new edges.
                 let RoutingTableSync { edges, accounts } = sync_data;
 

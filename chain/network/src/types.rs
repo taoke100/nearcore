@@ -442,7 +442,7 @@ pub struct SendMessage {
 /// Actor message to consolidate potential new peer.
 /// Returns if connection should be kept or dropped.
 #[derive(Clone, Debug)]
-pub struct Consolidate {
+pub struct RegisterPeer {
     pub(crate) actor: Addr<PeerActor>,
     pub(crate) peer_info: PeerInfo,
     pub(crate) peer_type: PeerType,
@@ -459,7 +459,7 @@ pub struct Consolidate {
 
 /// Addr<PeerActor> doesn't implement `DeepSizeOf` waiting for `deepsize` > 0.2.0.
 #[cfg(feature = "deepsize_feature")]
-impl deepsize::DeepSizeOf for Consolidate {
+impl deepsize::DeepSizeOf for RegisterPeer {
     fn deep_size_of_children(&self, context: &mut deepsize::Context) -> usize {
         self.peer_info.deep_size_of_children(context)
             + self.peer_type.deep_size_of_children(context)
@@ -470,8 +470,8 @@ impl deepsize::DeepSizeOf for Consolidate {
     }
 }
 
-impl Message for Consolidate {
-    type Result = ConsolidateResponse;
+impl Message for RegisterPeer {
+    type Result = RegisterPeerResponse;
 }
 
 #[cfg_attr(feature = "deepsize_feature", derive(DeepSizeOf))]
@@ -524,7 +524,7 @@ impl Message for StartRoutingTableSync {
 }
 
 #[derive(MessageResponse, Debug)]
-pub enum ConsolidateResponse {
+pub enum RegisterPeerResponse {
     Accept(Option<EdgeInfo>),
     InvalidNonce(Box<Edge>),
     Reject,
@@ -602,7 +602,7 @@ pub struct PeersResponse {
 pub enum PeerManagerMessageRequest {
     RoutedMessageFrom(RoutedMessageFrom),
     NetworkRequests(NetworkRequests),
-    Consolidate(Consolidate),
+    RegisterPeer(RegisterPeer),
     PeersRequest(PeersRequest),
     PeersResponse(PeersResponse),
     PeerRequest(PeerRequest),
@@ -648,7 +648,7 @@ impl Message for PeerManagerMessageRequest {
 pub enum PeerManagerMessageResponse {
     RoutedMessageFrom(bool),
     NetworkResponses(NetworkResponses),
-    ConsolidateResponse(ConsolidateResponse),
+    RegisterPeerResponse(RegisterPeerResponse),
     PeerRequestResult(PeerRequestResult),
     PeersResponseResult(()),
     PeerResponse(PeerResponse),
@@ -684,8 +684,8 @@ impl PeerManagerMessageResponse {
         }
     }
 
-    pub fn as_consolidate_response(self) -> ConsolidateResponse {
-        if let PeerManagerMessageResponse::ConsolidateResponse(item) = self {
+    pub fn as_consolidate_response(self) -> RegisterPeerResponse {
+        if let PeerManagerMessageResponse::RegisterPeerResponse(item) = self {
             item
         } else {
             panic!("expected PeerMessageRequest::ConsolidateResponse(");
@@ -1092,7 +1092,7 @@ mod tests {
     #[test]
     fn test_enum_size() {
         assert_size!(HandshakeFailureReason);
-        assert_size!(ConsolidateResponse);
+        assert_size!(RegisterPeerResponse);
         assert_size!(PeerRequest);
         assert_size!(PeerResponse);
         assert_size!(NetworkRequests);
@@ -1108,7 +1108,7 @@ mod tests {
         assert_size!(Pong);
         assert_size!(SyncData);
         assert_size!(SendMessage);
-        assert_size!(Consolidate);
+        assert_size!(RegisterPeer);
         assert_size!(FullPeerInfo);
         assert_size!(NetworkInfo);
     }

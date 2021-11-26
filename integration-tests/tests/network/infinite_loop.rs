@@ -13,7 +13,7 @@ use near_logger_utils::init_integration_logger;
 use near_network::routing::start_routing_table_actor;
 use near_network::test_utils::{convert_boot_nodes, open_port, GetInfo, WaitOrTimeoutActor};
 use near_network::types::{
-    NetworkClientResponses, NetworkRequests, PeerManagerMessageRequest, SyncData,
+    NetworkClientResponses, NetworkRequests, PeerManagerMessageRequest, RoutingTableSync,
 };
 use near_network::PeerManagerActor;
 use near_network_primitives::types::{
@@ -99,7 +99,7 @@ fn test_infinite_loop() {
         let pm2 = pm2.start();
         let request1 = NetworkRequests::Sync {
             peer_id: peer_id1.clone(),
-            sync_data: SyncData::account(AnnounceAccount {
+            sync_data: RoutingTableSync::from_account(AnnounceAccount {
                 account_id: "near".parse().unwrap(),
                 peer_id: peer_id1.clone(),
                 epoch_id: Default::default(),
@@ -108,7 +108,7 @@ fn test_infinite_loop() {
         };
         let request2 = NetworkRequests::Sync {
             peer_id: peer_id1.clone(),
-            sync_data: SyncData::account(AnnounceAccount {
+            sync_data: RoutingTableSync::from_account(AnnounceAccount {
                 account_id: "near".parse().unwrap(),
                 peer_id: peer_id2.clone(),
                 epoch_id: Default::default(),

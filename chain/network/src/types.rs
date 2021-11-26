@@ -263,22 +263,30 @@ impl From<HandshakeV2> for Handshake {
     }
 }
 
+/// Represent RoutingTableSync data. It contains required metadata use for routing messages
+/// to particular `PeerId` or `AccountId`.
 #[cfg_attr(feature = "deepsize_feature", derive(DeepSizeOf))]
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Clone, Debug)]
-pub struct SyncData {
+pub struct RoutingTableSync {
+    /// List of known edges from `RoutingTableActor::edges_info`.
     pub(crate) edges: Vec<Edge>,
+    /// List of known `account_id` to `PeerId` mappings.
+    /// Useful for `send_message_to_account` method, to route message to particular account.
     pub(crate) accounts: Vec<AnnounceAccount>,
 }
 
-impl SyncData {
-    pub(crate) fn edge(edge: Edge) -> Self {
+impl RoutingTableSync {
+    /// Construct from a single edge.
+    pub(crate) fn from_edge(edge: Edge) -> Self {
         Self { edges: vec![edge], accounts: Vec::new() }
     }
 
-    pub fn account(account: AnnounceAccount) -> Self {
+    /// Construct from account.
+    pub fn from_account(account: AnnounceAccount) -> Self {
         Self { edges: Vec::new(), accounts: vec![account] }
     }
 
+    /// Is empty.
     pub(crate) fn is_empty(&self) -> bool {
         self.edges.is_empty() && self.accounts.is_empty()
     }
@@ -306,7 +314,7 @@ pub enum PeerMessage {
     /// When a failed nonce is used by some peer, this message is sent back as evidence.
     LastEdge(Edge),
     /// Contains accounts and edge information.
-    RoutingTableSync(SyncData),
+    RoutingTableSync(RoutingTableSync),
     RequestUpdateNonce(EdgeInfo),
     ResponseUpdateNonce(Edge),
 
@@ -815,7 +823,7 @@ pub enum NetworkRequests {
     /// Data to sync routing table from active peer.
     Sync {
         peer_id: PeerId,
-        sync_data: SyncData,
+        sync_data: RoutingTableSync,
     },
 
     RequestUpdateNonce(PeerId, EdgeInfo),
@@ -1106,7 +1114,7 @@ mod tests {
         assert_size!(Handshake);
         assert_size!(Ping);
         assert_size!(Pong);
-        assert_size!(SyncData);
+        assert_size!(RoutingTableSync);
         assert_size!(SendMessage);
         assert_size!(Consolidate);
         assert_size!(FullPeerInfo);

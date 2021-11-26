@@ -20,7 +20,8 @@ use crate::types::SetAdvOptions;
 use crate::types::{
     Consolidate, ConsolidateResponse, GetPeerId, GetPeerIdResult, NetworkInfo,
     PeerManagerMessageRequest, PeerManagerMessageResponse, PeerMessage, PeerRequest, PeerResponse,
-    PeersRequest, PeersResponse, SendMessage, StopMsg, SyncData, Unregister, ValidateEdgeList,
+    PeersRequest, PeersResponse, RoutingTableSync, SendMessage, StopMsg, Unregister,
+    ValidateEdgeList,
 };
 use crate::types::{FullPeerInfo, NetworkClientMessages, NetworkRequests, NetworkResponses};
 #[cfg(feature = "protocol_feature_routing_exchange_algorithm")]
@@ -302,8 +303,10 @@ impl PeerManagerActor {
                 Ok(RoutingTableMessagesResponse::AddVerifiedEdgesResponse(filtered_edges)) => {
                     // Broadcast new edges to all other peers.
                     if broadcast_edges && act.adv_helper.can_broadcast_edges() {
-                        let new_data =
-                            SyncData { edges: filtered_edges, accounts: Default::default() };
+                        let new_data = RoutingTableSync {
+                            edges: filtered_edges,
+                            accounts: Default::default(),
+                        };
                         act.broadcast_message(
                             ctx,
                             SendMessage { message: PeerMessage::RoutingTableSync(new_data) },
@@ -327,7 +330,7 @@ impl PeerManagerActor {
             self.routing_table_view.add_account(account.clone());
         }
 
-        let new_data = SyncData { edges: Default::default(), accounts };
+        let new_data = RoutingTableSync { edges: Default::default(), accounts };
 
         if !new_data.is_empty() {
             self.broadcast_message(
@@ -580,7 +583,7 @@ impl PeerManagerActor {
 
         near_performance_metrics::actix::run_later(ctx, WAIT_FOR_SYNC_DELAY, move |act, ctx| {
             let _ = addr.do_send(SendMessage {
-                message: PeerMessage::RoutingTableSync(SyncData {
+                message: PeerMessage::RoutingTableSync(RoutingTableSync {
                     edges: known_edges,
                     accounts: known_accounts,
                 }),
@@ -598,7 +601,9 @@ impl PeerManagerActor {
                 act.broadcast_message(
                     ctx,
                     SendMessage {
-                        message: PeerMessage::RoutingTableSync(SyncData::edge(new_edge)),
+                        message: PeerMessage::RoutingTableSync(RoutingTableSync::from_edge(
+                            new_edge,
+                        )),
                     },
                 );
             }
@@ -644,7 +649,9 @@ impl PeerManagerActor {
                 self.broadcast_message(
                     ctx,
                     SendMessage {
-                        message: PeerMessage::RoutingTableSync(SyncData::edge(edge_update)),
+                        message: PeerMessage::RoutingTableSync(RoutingTableSync::from_edge(
+                            edge_update,
+                        )),
                     },
                 );
             }
@@ -923,7 +930,9 @@ impl PeerManagerActor {
                     act.broadcast_message(
                         ctx,
                         SendMessage {
-                            message: PeerMessage::RoutingTableSync(SyncData::edge(new_edge)),
+                            message: PeerMessage::RoutingTableSync(RoutingTableSync::from_edge(
+                                new_edge,
+                            )),
                         },
                     );
                 }
@@ -1224,7 +1233,9 @@ impl PeerManagerActor {
             self.broadcast_message(
                 ctx,
                 SendMessage {
-                    message: PeerMessage::RoutingTableSync(SyncData::account(announce_account)),
+                    message: PeerMessage::RoutingTableSync(RoutingTableSync::from_account(
+                        announce_account,
+                    )),
                 },
             );
         }
@@ -1784,7 +1795,7 @@ impl PeerManagerActor {
             }
             NetworkRequests::Sync { peer_id, sync_data } => {
                 // Process edges and add new edges to the routing table. Also broadcast new edges.
-                let SyncData { edges, accounts } = sync_data;
+                let RoutingTableSync { edges, accounts } = sync_data;
 
                 // Filter known accounts before validating them.
                 let accounts = accounts

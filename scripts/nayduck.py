@@ -51,7 +51,7 @@ def _parse_args():
                        action='store_true',
                        help='Read test set from standard input.')
     parser.add_argument('--dry-run',
-                        '-d',
+                        '-n',
                         action='store_true',
                         help='Prints list of tests to execute, without doing anything')
     args = parser.parse_args()

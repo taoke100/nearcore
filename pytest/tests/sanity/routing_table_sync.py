@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.7
 # Simulates routing table exchange with two nodes A, B. We are testing a few test cases depending on the number of
 # edges A, has but B doesn't and vise-versa. For each configuration, we simulate doing routing table exchange, and
 # we check whenever both have the same version of routing table at the end.
@@ -6,12 +7,20 @@
 # edge pruning in order to eliminate those factors for sake of testing. In addition uses JsonRPC to add/remove edges
 # check current state of routing table on both sites.
 
-import sys, time
+import os
+import sys
+import time
 
 import base58
 import ed25519
 
-sys.path.append('lib')
+cur_dir = os.path.dirname(os.path.realpath(__file__))
+lib_dir = os.path.dirname(os.path.dirname(cur_dir))
+
+sys.path.append(lib_dir + "/lib")
+
+print(lib_dir)
+
 
 from cluster import start_cluster
 from peer import logger

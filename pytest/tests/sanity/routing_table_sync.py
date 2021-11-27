@@ -10,17 +10,12 @@
 import os
 import sys
 import time
+import pathlib
 
 import base58
 import ed25519
 
-cur_dir = os.path.dirname(os.path.realpath(__file__))
-lib_dir = os.path.dirname(os.path.dirname(cur_dir))
-
-sys.path.append(os.path.join(lib_dir, "lib"))
-
-print(lib_dir)
-
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2] / 'lib'))
 
 from cluster import start_cluster
 from peer import logger

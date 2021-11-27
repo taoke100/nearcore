@@ -777,7 +777,7 @@ def start_cluster(num_nodes,
     return nodes
 
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+ROOT_DIR = str(pathlib.Path(__file__).resolve().parents[2])
 
 DEFAULT_CONFIG = {
     'local': True,

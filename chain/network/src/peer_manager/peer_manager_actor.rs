@@ -1194,7 +1194,7 @@ impl PeerManagerActor {
             adv_disable_edge_signature_verification: self
                 .adv_helper
                 .adv_disable_edge_signature_verification,
-            peer_id,
+            source_peer_id: peer_id,
         });
     }
 

@@ -17,7 +17,7 @@ import ed25519
 cur_dir = os.path.dirname(os.path.realpath(__file__))
 lib_dir = os.path.dirname(os.path.dirname(cur_dir))
 
-sys.path.append(lib_dir + "/lib")
+sys.path.append(os.path.join(lib_dir, "lib"))
 
 print(lib_dir)
 

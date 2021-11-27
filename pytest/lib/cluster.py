@@ -777,11 +777,11 @@ def start_cluster(num_nodes,
     return nodes
 
 
-ROOT_DIR = str(pathlib.Path(__file__).resolve().parents[2])
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[2]
 
 DEFAULT_CONFIG = {
     'local': True,
-    'near_root': os.environ.get("NEAR_ROOT", os.path.join(ROOT_DIR, 'target/debug')),
+    'near_root': os.environ.get("NEAR_ROOT", str(os.path.join(ROOT_DIR, 'target/debug'))),
     'binary_name': 'neard',
     'release': False,
 }

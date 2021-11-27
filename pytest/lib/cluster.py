@@ -780,10 +780,15 @@ def start_cluster(num_nodes,
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[2]
 
 DEFAULT_CONFIG = {
-    'local': True,
-    'near_root': os.environ.get("NEAR_ROOT", str(os.path.join(ROOT_DIR, 'target/debug'))),
-    'binary_name': 'neard',
-    'release': False,
+    'local':
+        True,
+    'near_root':
+        os.environ.get("NEAR_ROOT", str(os.path.join(ROOT_DIR,
+                                                     'target/debug'))),
+    'binary_name':
+        'neard',
+    'release':
+        False,
 }
 
 CONFIG_ENV_VAR = 'NEAR_PYTEST_CONFIG'

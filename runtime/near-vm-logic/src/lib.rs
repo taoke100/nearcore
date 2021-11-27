@@ -8,7 +8,7 @@ pub mod gas_counter;
 mod logic;
 pub mod mocks;
 pub mod serde_with;
-#[cfg(tests)]
+#[cfg(test)]
 mod tests;
 pub mod types;
 mod utils;

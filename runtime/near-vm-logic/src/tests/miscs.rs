@@ -584,7 +584,7 @@ where
 #[test]
 fn test_ecrecover() {
     for EcrecoverTest { m, v, sig, mc, res } in
-        from_slice::<'_, Vec<_>>(fs::read("tests/ecrecover-tests.json").unwrap().as_slice())
+        from_slice::<'_, Vec<_>>(fs::read("src/tests/ecrecover-tests.json").unwrap().as_slice())
             .unwrap()
     {
         let mut logic_builder = VMLogicBuilder::default();

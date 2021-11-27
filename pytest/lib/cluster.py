@@ -781,7 +781,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__fi
 
 DEFAULT_CONFIG = {
     'local': True,
-    'near_root': os.environ.get("NEAR_ROOT", ROOT_DIR + '/target/debug/'),
+    'near_root': os.environ.get("NEAR_ROOT", os.path.join(ROOT_DIR, 'target/debug')),
     'binary_name': 'neard',
     'release': False,
 }

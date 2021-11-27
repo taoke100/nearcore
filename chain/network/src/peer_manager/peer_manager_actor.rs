@@ -7,7 +7,7 @@ use crate::peer_manager::peer_store::{PeerStore, TrustLevel};
     feature = "protocol_feature_routing_exchange_algorithm"
 ))]
 use crate::routing::edge::SimpleEdge;
-use crate::routing::edge::{Edge, PartialEdgeInfo, EdgeType};
+use crate::routing::edge::{Edge, EdgeType, PartialEdgeInfo};
 use crate::routing::edge_verifier_actor::EdgeVerifierHelper;
 use crate::routing::routing::{
     PeerRequestResult, RoutingTableView, DELETE_PEERS_AFTER_TIME, MAX_NUM_PEERS,

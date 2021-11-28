@@ -39,8 +39,6 @@ use near_jsonrpc_primitives::types::config::RpcProtocolConfigResponse;
 use near_metrics::{Encoder, TextEncoder};
 #[cfg(feature = "test_features")]
 use near_network::routing::GetRoutingTableResult;
-#[cfg(feature = "sandbox")]
-use near_network::types::SandboxResponse;
 #[cfg(feature = "test_features")]
 use near_network::types::{GetPeerId, PeerManagerMessageRequest, SetAdvOptions};
 use near_network::types::{NetworkClientMessages, NetworkClientResponses};
@@ -1114,7 +1112,9 @@ impl JsonRpcHandler {
                     ))
                     .await;
                 if let Ok(NetworkClientResponses::SandboxResult(
-                    SandboxResponse::SandboxPatchStateFinished(true),
+                    near_network_primitives::types::SandboxResponse::SandboxPatchStateFinished(
+                        true,
+                    ),
                 )) = patch_state_finished
                 {
                     break;

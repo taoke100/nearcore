@@ -21,7 +21,7 @@ where
         V: Clone,
     {
         if let Some(result) = self.get(&key) {
-            return result.clone();
+            return result;
         }
         let val = f(&key);
         let val_clone = val.clone();
